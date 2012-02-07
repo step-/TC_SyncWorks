@@ -1,0 +1,20 @@
+(?mxS)
+# TC_SyncWorks v1.1 20120205
+(?:
+^DIR\s(?P<DirTo>L\sto\sR|R\sto\sL)\s(?P<Dir>.*)$
+)
+|(?:
+^(?:[L2])\s(?P<FileTo>L\sto\sR|R\sto\sL)\s(?P<File>.+?)\s(?P<Size>[\d.,]+)\s(?:[\d/-]+)\s(?:[\d:]+)\s[|]\s?(?:.*)$
+)
+|(?:
+^R\sR\sto\sL\s\s[|]\s(?:[\d/-]+)\s(?:[\d:]+)\s(?P<SizeR>[\d.,]+)\s(?P<FileR>.*)$
+)
+|(?:
+^(?:DIR\sEQ)\s(?P<DirSame>.*)$
+)
+|(?:
+^(?P<Off>L|R)\sOFF
+)
+|(?:
+^(?P<FileUnequal>2\sUNEQ)
+)
