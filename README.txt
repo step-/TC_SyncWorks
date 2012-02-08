@@ -41,11 +41,11 @@ before pressing the "extract" key, default [^R].
 Operation
 ---------
 
-When TC_SyncWorks starts it displays a brief greeting then minimizes itself
+When TC_SyncWorks starts it displays a brief greeting then it minimizes itself
 to the icon tray and waits for a user to press one of its hotkeys. Hotkeys
 are enabled in Total Commander's Directory Synchronization window only.
-Furthermore, the data extraction action stops itself unless the synchronization
-file _list_ is activated, that is, a row has the focus.
+Furthermore, for the data extraction action to proceed the synchronization
+file _list_ needs to be activated, that is, a row has the focus.
 
 Typically you will open TC's Directory Synchronization window, press
 the Compare button, then press TC_SyncTool's "extract" window to begin
@@ -53,6 +53,10 @@ extracting (and saving) the contents of the right and left file lists.
 By default, after extraction you will be prompted to perform md5 sums,
 then TC_SyncTool will minimize back to the icon tray and wait for your
 next "extract" key press.
+
+While extraction is taking place you must not work with Total Commander.
+Md5 hashing takes place in the background, so you can let it run and at the
+same time start synchronizing left/right files with Total Commander.
 
 TC_SyncWorks extracts all and only the items that are marked for copy in
 the Directory Synchronization list, and creates up to six files, by default
