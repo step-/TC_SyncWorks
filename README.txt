@@ -20,9 +20,9 @@ Requirements
 
 Total Commander version 7.51a or higher.
 
-TC_SyncWorks was developed and tested on Windows 7 SP1 32-bit and Windows
-Server 2003 32-bit with Total Commander 7.56a and 8.0 beta 15. It should
-also work with Windows XP 32-bit.
+TC_SyncWorks was developed and tested on Windows 7 SP1 32-bit and 64-bit, and
+Windows Server 2003 32-bit with Total Commander 7.56a, 8.0 beta 15, and 8.01
+32-bit. It should work on Windows XP 32-bit.
 
 Installation
 ------------
