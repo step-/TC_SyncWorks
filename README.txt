@@ -196,5 +196,10 @@ Maybe - Extract just the selected rows.
 
 Changelog
 ---------
+20121221 version 0.21
+Fix: Keyboard lock wasn't released upon running into unhandled input error condition.
+Add: Support Ukranian regional settings.
+Add: Unicode support (ANSI no more). 
+
 20120206 version 0.10
 First public release.

@@ -1,19 +1,19 @@
 (?mxS)
-# TC_SyncWorks v1.1 20120205
+# TC_SyncWorks 1.3 20121221
 (?:
 ^DIR\s(?P<DirTo>L\sto\sR|R\sto\sL)\s(?P<Dir>.*)$
 )
 |(?:
-^(?:[L2])\s(?P<FileTo>L\sto\sR|R\sto\sL)\s(?P<File>.+?)\s(?P<Size>[\d.,]+)\s(?:[\d/-]+)\s(?:[\d:]+)\s[|]\s?(?:.*)$
+^(?:[L2])\s(?P<FileTo>L\sto\sR|R\sto\sL)\s(?P<File>[^|]+?)\s(?P<Size>[\d.,\xA0]+)\s(?P<SizeRest>(?:\d+\s)*)(?P<Date>[\d/\-.]+)\s(?P<Time>[\d:]+)\s[|](?:$|\s(?:[\d/\-.]+)\s(?:[\d:]+)\s(?P<SizeR>[\d.,\xA0]+)\s(?P<SizeRestR>(?:\d+\s)*)(?P<FileR>.*)$)
 )
 |(?:
-^R\sR\sto\sL\s\s[|]\s(?:[\d/-]+)\s(?:[\d:]+)\s(?P<SizeR>[\d.,]+)\s(?P<FileR>.*)$
+^R\sR\sto\sL\s\s[|]\s(?P<DateR1>[\d/\-.]+)\s(?P<TimeR1>[\d:]+)\s(?P<SizeR1>[\d.,\xA0]+)\s(?P<SizeRestR1>(?:\d+\s)*)(?P<FileR1>.*)$
 )
 |(?:
 ^(?:DIR\sEQ)\s(?P<DirSame>.*)$
 )
 |(?:
-^(?P<Off>L|R)\sOFF
+^(?P<Off>2|L|R)\sOFF
 )
 |(?:
 ^(?P<FileUnequal>2\sUNEQ)

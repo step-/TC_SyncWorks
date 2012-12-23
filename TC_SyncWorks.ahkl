@@ -1,5 +1,5 @@
 ; ////////////////////////////////////////////////////////////////////////////
-; // TC_SyncWorks.ahkl 0.10 build 20120206
+; // TC_SyncWorks.ahkl 0.21 build 20121221
 ; // http://ghisler.ch/board/viewtopic.php?p=241083#241083
 ; // 
 ; // Extract cm_FileSync comparison results, calculate MD5 sums, run user's
@@ -9,7 +9,7 @@
 ; ////////////////////////////////////////////////////////////////////////////
 
 #SingleInstance, Force
-Version = %A_ScriptName% v.0.10 build 20120206
+Version = %A_ScriptName% v.0.21 build 20121221
 
 ; get script filepathname stem, etc. {{{ , ScriptStem, ScriptName, ScriptDir
 StringSplit, p, A_ScriptName, .
@@ -117,7 +117,7 @@ if( 1 ) { ; UNSUPPORTED TC < 7.50 RC1 ~ TODO Return if version mismatch
 	; Date and time {{{ , DateTime YYYYMMDDHHMMSS
 	DateTime := A_Now
 	; }}}
-	; get compared folder paths {{{ , LR RR
+	; get compared folder paths {{{ , LR RR \-terminated
 	ControlGetText, LR, TAltEdit2, ahk_class TCmpForm ; left  root path
 	ControlGetText, RR, TAltEdit1, ahk_class TCmpForm ; right root path
 	; }}}
@@ -310,30 +310,32 @@ if( 1 ) { ; UNSUPPORTED TC < 7.50 RC1 ~ TODO Return if version mismatch
 					iProgressBarNextGoal += Max // 53 ; to 100% in 53 steps
 				}
 				; parse row {{{
+				;mDir := mDirSame := mOff := mFileTo := mFileUnequal := mFile := mSize := mSizeRest := mFileR := mSizeR := mSizeRest := mFileR1 := mSizeR1 := mSizeRest1 := ""
 				p := RegExMatch(sRow, Regex, m)
 				If( ErrorLevel ) {
 					MsgBox, %ErrorLevel% %A_LineNumber%
 					CleanUp()
 					Return
 				}
-;OutputDebug, i{%i%} mDir{%mDir%} mFile{%mFile%} mFileTo{%mFileTo%} mFileR{%mFileR%} mDirSame{%mDirSame%} mOff{%mOff%} mFileUnequal{%mFileUnequal%}
+;OutputDebug, i{%i%} mDir{%mDir%} mFileTo{%mFileTo%} mFile{%mFile%} mSize{%mSize%} mSizeRest{%mSizeRest%} mFileR{%mFileR%} mSizeR{%mSizeR%} mSizeRestR{%mSizeRestR%} mFileR1{%mFileR1%} mSizeR1{%mSizeR1%} mSizeRestR1{%mSizeRestR1%} mDirSame{%mDirSame%} mOff{%mOff%} mFileUnequal{%mFileUnequal%}
 				If( mDir>"" ) {
 					MkDir(A_LineNumber, mDirTo == "L to R" ? RR : LR, mDir) ; sets Base
 				} Else If( mFile>"" ) {
 					If( mFileTo == "L to R" ) {
-						CpFileToR(A_LineNumber, Base . mFile, Base . mFile, mSize)
+						CpFileToR(A_LineNumber)
 					} Else {
-						CpFileToL(A_LineNumber, Base . mFile, Base . mFile, mSize)
+						CpFileToL(A_LineNumber, false)
 					}
-				} Else If( mFileR>"" ) {
-					CpFileToL(A_LineNumber, Base . mFileR, Base . mFile, mSizeR)
+				} Else If( mFileR1>"" ) {
+					CpFileToL(A_LineNumber, true)
 				} Else If( mDirSame>"" ) {
 					++NoOps ; TC uses "DIR EQ" for both unticked and equal dirs
 					Base := mDirSame
 				} Else If( mOff>"" || mFileUnequal>"" ) {
 					++NoOps ; unticked file
 				} Else {
-					MsgBox, Unhandled match %A_LineNumber% `n{%sRow%}
+					KillFocusHandler()
+					MsgBox, Unhandled match %A_LineNumber% `n{%sRow%}`n`nPlease press Ctrl+C to copy this message to the clipboard, then paste it to a text file and attach the file to your bug report at http://ghisler.ch/board/viewtopic.php?p=241083
 	OutputDebug, Unhandled match %A_LineNumber% `n{%sRow%}
 					LogString(A_FileLine, "Unhandled match " . A_LineNumber . " {" . sRow . "}")
 					CleanUp()
@@ -464,30 +466,162 @@ MkDir(aId, aRootPath, aDir="")
 	}
 	Return
 } ; }}}
-CpFileToR(aId, aSrc, aDst, aSize)
+CpFileToR(aId)
 { ; {{{
-	global LR, RR, foSrcL, LSrcOps, LSrcSiz
-	foSrcL.WriteLine(aSrc)
-  Sequence(2, "", LR aSrc, RR aDst)
+	global LR, RR, Base, foSrcL, LSrcOps, LSrcSiz, mFile, mSize, mSizeRest, mFileR, mSizeR, mSizeRestR
+	aSize := mSize
+	if( mSizeRest>"" )
+	{
+	    src := mSizeRestR>"" ? A3(LR Base, false) : A2(LR Base)
+	    if( "" == src )
+			src := dst := Base . mFile
+		else
+		{
+			aSize := mFile " " mSize " " mSizeRest
+			StringReplace, aSize, aSize, %src%,
+			src := dst := Base . src
+		}
+	}
+	else{
+		src := dst := Base . mFile
+	}
+;OutputDebug, src{%src%} aSize{%aSize%}
+	aSize := RegExReplace(aSize,"\D+")
+	foSrcL.WriteLine(src)
+	Sequence(2, "", LR src, RR dst, aSize)
 	++LSrcOps
-	LSrcSiz += RegExReplace(aSize,"\D+")
+	LSrcSiz += aSize
 	Return
 } ; }}}
-CpFileToL(aId, aSrc, aDst, aSize)
+A2(dir) ; return <longest existing mFile>`n<revised mSize> or ""
 { ; {{{
-	global LR, RR, foSrcR, RSrcOps, RSrcSiz
-	foSrcR.WriteLine(aSrc)
-	Sequence(3, "", RR aSrc, LR aDst)
+;ref bug-track\20121212-test-setup {{{
+;line "L2R fileL 2 800 801 18.03.09" could mean
+;name {L2R fileL} size {2 800 801} or
+;name {L2R fileL 2} size {800 801} or
+;name {L2R fileL 2 800} size {801} and is parsed as
+;mSize {2} mSizeRest {800 801 } mFile {L2R fileL} + mSizeR, mSizeRestR, mFileR
+;}}}
+
+	global mSize, mSizeRest, mFile
+	s := mSize
+	r := Trim(RegExReplace(mSize . " " . mSizeRest, "\b\d+ $", ""))
+	f := mFile
+	take := f
+	revlist := take
+	Loop, Parse, r, %A_Space%
+	{
+		take := take " " A_LoopField
+		revlist := Trim(take) "`n" revlist
+	}
+;OutputDebug, A2: mSize{%mSize%} mSizeRest{%mSizeRest%}`nr{%r%}`nrevlist{%revlist%}
+	ret := ""
+	Loop, Parse, revlist, `n
+	{
+		if( FileExist(dir A_LoopField) )
+		{
+			ret := A_LoopField
+			break
+		}
+	}
+	Return, ret
+} ; }}}
+CpFileToL(aId, bNoLeft)
+{ ; {{{
+	global LR, RR, Base, foSrcR, RSrcOps, RSrcSiz, mFile, mSize, mSizeRest
+	if( bNoLeft )
+	{	; when bNoLeft the regex names right-side matches as mFileR1, mSizeR1, etc.
+		global mSizeR1, mSizeRestR1, mFileR1
+		aSize := mSizeR1
+		aSizeRest := mSizeRestR1
+		aFile := mFileR1
+	}
+	else ; when !bNoLeft the regex names right-side matches as mFileR, mSizeR, etc.
+	{
+		global mSizeR, mSizeRestR, mFileR
+		aSize := mSizeR
+		aSizeRest := mSizeRestR
+		aFile := mFileR
+
+	}
+	if( aSizeRest>"" ) {
+	    src := A3(RR Base, bNoLeft)
+	    if( "" == src )
+			src := dst := Base . aFile
+		else
+		{
+			aSize := aSize " " aSizeRest aFile
+			StringReplace, aSize, aSize, %src%,
+			src := dst := Base . src
+		}
+	} else
+		src := dst := Base . aFile
+;OutputDebug, bNoLeft{%bNoLeft%} src{%src%} aSize{%aSize%}
+	aSize := RegExReplace(aSize,"\D+")
+	foSrcR.WriteLine(src)
+	Sequence(3, "", RR src, LR dst, aSize)
 	++RSrcOps
-	RSrcSiz += RegExReplace(aSize,"\D+")
+	RSrcSiz += aSize
 	Return
 } ; }}}
-Sequence(iType,sDir,sSrc="",sDst="")
-{ ; CSV file {{{ columns: seq counter,op type,dir,src,dst
+A3(dir, bNoLeft) ; return <longest existing mFileR|mFileR1>`n<revised mSizeR|mSizeR1> or ""
+{ ; {{{
+;ref bug-track\20121212-test-setup {{{
+;line "14:00:01 3 800 801 2 R2L fileR" could mean
+;size {3} name {800 801 2 R2L fileR} or
+;size {3 800} name {801 2 R2L fileR} or
+;size {3 800 801} name {2 R2L fileR} or
+;size {3 800 802 2} name {R2L fileR} and is parsed as
+;mSizeR1 {3} mSizeRestR1 {800 801 2 } mFileR1 {R2L fileR}
+;}}}
+	if( bNoLeft )
+	{	; when bNoLeft the regex names right-side matches as mFileR1, mSizeR1, etc.
+		global mSizeR1, mSizeRestR1, mFileR1
+		s := mSizeR1
+		x := mSizeRestR1
+		f := mFileR1
+	}
+	else ; when !bNoLeft the regex names right-side matches as mFileR, mSizeR, etc.
+	{
+		global mSizeR, mSizeRestR, mFileR
+		s := mSizeR
+		x := mSizeRestR
+		f := mFileR
+	}
+	r := ""
+	Loop, Parse, x, %A_Space%
+	{
+		r := A_LoopField " " r
+	}
+	r := Trim(r)
+	take := f
+	revlist := take
+	Loop, Parse, r, %A_Space%
+	{
+		take := A_LoopField " " take 
+		revlist := Trim(take) "`n" revlist
+	}
+;if( bNoLeft )
+;OutputDebug, A3: bNoLeft{%bNoLeft%} mSizeR1{%mSizeR1%} mSizeRestR1{%mSizeRestR1%}`nr{%r%}`nrevlist{%revlist%}
+;else
+;OutputDebug, A3: bNoLeft{%bNoLeft%} mSizeR{%mSizeR%} mSizeRestR{%mSizeRestR%}`nr{%r%}`nrevlist{%revlist%}
+	ret := ""
+	Loop, Parse, revlist, `n
+	{
+		if( FileExist(dir A_LoopField) )
+		{
+			ret := A_LoopField
+			break
+		}
+	}
+	Return, ret
+} ; }}}
+Sequence(iType,sDir,sSrc="",sDst="",sSrcSize="")
+{ ; CSV file {{{ columns: seq counter,op type,dir,src fullpath,dst fullpath,src size
 	global foSeq
 	static count=0
 	++count
-	s = %count%,%iType%,`"%sDir%`",`"%sSrc%`",`"%sDst%`"
+	s = %count%,%iType%,`"%sDir%`",`"%sSrc%`",`"%sDst%`",`"%sSrcSize%`"
 	foSeq.WriteLine( s )
 } ; }}}
 FmtTime(iSeconds)
@@ -521,9 +655,9 @@ StartProgressBar(iMax, iThreshold=100, sText="", sTitle="Progress...", sFont="")
 { ; {{{
 	; no activate the progress bar if iMax < iThreshold
 	; progress bar range 1 .. iMax
-  ; caller must use Progress, %i% to advance the progress bar, i=1 .. iMax
-  ; update Progress only when the next goal is reached, 1 <= iProgressBarNextGoal <= iMax by ~ 2% increments
-  ; caller may use  %iProgressCounter% instead of %i% when grouping function calls (see Hashing example)
+	; caller must use Progress, %i% to advance the progress bar, i=1 .. iMax
+	; update Progress only when the next goal is reached, 1 <= iProgressBarNextGoal <= iMax by ~ 2% increments
+	; caller may use  %iProgressCounter% instead of %i% when grouping function calls (see Hashing example)
  	global ShowProgress, iProgressBarNextGoal, iProgressCounter
 	If( ShowProgress ) {
 		If( iMax < iThreshold ) {
@@ -641,7 +775,7 @@ OutputDebug, %A_ThisFunc%
 BlockSystemInput() {
 ; {{{, Off
 	global HotkeyUnlock
-OutputDebug, %A_ThisFunc%(%HotkeyUnlock%)
+;OutputDebug, %A_ThisFunc%(%HotkeyUnlock%)
 	Hotkey, IfWinActive
 	Hotkey, %HotkeyUnlock%, EnableInput, On
 	Hotkey, Alt & Tab, AltTab, On
@@ -653,7 +787,7 @@ OutputDebug, %A_ThisFunc%(%HotkeyUnlock%)
 UnBlockSystemInput() {
 ; {{{
 	global HotkeyUnlock
-OutputDebug, %A_ThisFunc%
+;OutputDebug, %A_ThisFunc%
 	BlockKeyboardInputs("Off")
 	BlockMouseClicks("Off")
 	RestoreCursors() ; mouse pointer
