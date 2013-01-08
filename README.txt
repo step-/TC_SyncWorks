@@ -196,10 +196,15 @@ Maybe - Extract just the selected rows.
 
 Changelog
 ---------
+20120105 version 0.22
+Improved hotkey error handling to address issue 20121228.
+Enhanced documentation.
+
 20121221 version 0.21
 Fix: Keyboard lock wasn't released upon running into unhandled input error condition.
 Add: Support Ukranian regional settings.
-Add: Unicode support (ANSI no more). 
+Add: Unicode support (ANSI no more).
+Regex 1.3 20121121 
 
 20120206 version 0.10
 First public release.

@@ -1,5 +1,5 @@
 ; ////////////////////////////////////////////////////////////////////////////
-; // TC_SyncWorks.ahkl 0.21 build 20121221
+; // TC_SyncWorks.ahk 0.22 build 20130105
 ; // http://ghisler.ch/board/viewtopic.php?p=241083#241083
 ; // 
 ; // Extract cm_FileSync comparison results, calculate MD5 sums, run user's
@@ -9,7 +9,7 @@
 ; ////////////////////////////////////////////////////////////////////////////
 
 #SingleInstance, Force
-Version = %A_ScriptName% v.0.21 build 20121221
+Version = %A_ScriptName% v.0.22 build 20130105
 
 ; get script filepathname stem, etc. {{{ , ScriptStem, ScriptName, ScriptDir
 StringSplit, p, A_ScriptName, .
@@ -49,11 +49,9 @@ Greeting:
 If( ShowCancelBefore ) {
 p =
 (
-%Version% - Instructions`n`nWith TC's Directory Synchronization tool open,
-compare two folders then press [%HotkeyExtract%] to extract file lists,
-compute MD5 sums, and run your post-processing script.
+%Version% - Instructions`n`nWith TotalCommander's Directory Synchronization tool open, compare two folders then press [%HotkeyExtract%] to extract file lists, compute MD5 sums, and run your post-processing script. Press [%HotkeyUnlock%] if keyboard gets locked.
 
-[%HotkeyExtract%] extract    [%HotkeyUnlock%] unlock    [%HotkeyPause%] pause    [%HotkeyReload%] reload
+Hotkeys:    [%HotkeyExtract%] extract    [%HotkeyUnlock%] unlock   [%HotkeyPause%] pause    [%HotkeyReload%] reload
 )
 MsgBox, %p%
 }
@@ -67,9 +65,19 @@ IniRead, HotkeyPause, %nIni%, %nUser%, HotkeyPause, Pause
 IniRead, HotkeyReload, %nIni%, %nUser%, HotkeyReload, ^R
 IniRead, HotkeyUnlock, %nIni%, %nUser%, HotkeyUnlock, ^Esc
 Hotkey, IfWinActive, ahk_class TCmpForm
-Hotkey, %HotkeyExtract%, Extract
-Hotkey, %HotkeyPause%, PauseMe
-Hotkey, %HotkeyReload%, ReloadMe
+Try {
+	Hotkey, %HotkeyExtract%, Extract
+	Hotkey, %HotkeyPause%, PauseMe
+	Hotkey, %HotkeyReload%, ReloadMe
+	Hotkey, %HotkeyUnlock%, EnableInput
+} catch e {
+	m := "Error "
+	if( FileExist(nIni) )
+		m .= " in " . nIni
+	m .= " :`n`t" e.Message "`n`nPlease define valid hotkeys for your keyboard layout (see configuration instructions in files README and sample-config.ini).`n`nThis program will exit."
+	MsgBox, %m%
+	ExitApp
+}
 Return
 ; }}}
 EnableInput:
@@ -779,7 +787,7 @@ BlockSystemInput() {
 	Hotkey, IfWinActive
 	Hotkey, %HotkeyUnlock%, EnableInput, On
 	Hotkey, Alt & Tab, AltTab, On
-  SetSystemCursor("IDC_Cross") ; mouse pointer
+	SetSystemCursor("IDC_Cross") ; mouse pointer
 	BlockKeyboardInputs()
 	BlockMouseClicks()
 }
